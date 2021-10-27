@@ -77,7 +77,7 @@ print(f"Number of logs to be processed: {logCount}")
 
 stateDict = {}                  # This is the master dict storing state names and current values in mA
 durationDict = {}               # This dictionary contains the durations for manually added states in us (micro seconds)     
-milliSecToPlot = 1024    # This sets how much data will be plotted
+milliSecToPlot = 1024*4    # This sets how much data will be plotted
 timeUnits = milliSecToPlot*1000  
 stateLogStartTime_us = 0.2 * 1e6          # PHY state log will be imported only after this time from beginning
 enableStateTransitions = True         # If enabled, state transitions will be added
@@ -681,21 +681,22 @@ for logFilesCounter in range(logCount):
                 durationVectorRampUpDown.append(durationVectorModified[ii])
                 timeStampVectorRampUpDown.append(timeStampVectorModified[ii])
                 #print("found ack")
-                if (stateVectorModified[ii+1] == 'SLEEP' and durationVectorModified[ii+1] >= durationDict["ACK_802_11_TX_rampDown"]):
-                    addedAlreadyLookAhead = True
-                    stateVectorRampUpDown.append('ACK_802_11_TX_RAMPDOWN')
-                    durationVectorRampUpDown.append(durationDict["ACK_802_11_TX_rampDown"])
-                    timeStampVectorRampUpDown.append(timeStampVectorModified[ii+1])
-                    # Adding next idle time after deduction
-                    stateVectorRampUpDown.append('SLEEP')
-                    durationVectorRampUpDown.append(durationVectorModified[ii+1] - durationDict["ACK_802_11_TX_rampDown"])
-                    timeStampVectorRampUpDown.append(timeStampVectorModified[ii+1]+ durationDict["ACK_802_11_TX_rampDown"])
-                elif (stateVectorModified[ii+1] == 'SLEEP' and durationVectorModified[ii+1] < durationDict["ACK_802_11_TX_rampDown"]):   # Available IDLE state is less than needed. Just change the available to ACK_802_11_TX_RAMPDOWN. No lookahead
-                    stateVectorModified[ii+1] = 'ACK_802_11_TX_RAMPDOWN'
-                    #print(f"Warning at ii: {ii}. TCP RampDown added with less duration\ndurationVectorModified[ii+1] = {durationVectorModified[ii+1]} \n durationDict["ACK_802_11_TX_rampDown"]={durationDict["ACK_802_11_TX_rampDown"]}")
-                else:
-                    pass
-                    print(f"Error at ii: {ii}. Could not add TCP RampDown\ndurationVectorModified[ii+1] = {durationVectorModified[ii+1]} \n durationDict['ACK_802_11_TX_rampDown']={durationDict['ACK_802_11_TX_rampDown']}\nstateVectorModified[ii+1]= {stateVectorModified[ii+1]}")
+                if enableStateTransitions and ((ii+1) < stateVectorLength):
+                    if (stateVectorModified[ii+1] == 'SLEEP' and durationVectorModified[ii+1] >= durationDict["ACK_802_11_TX_rampDown"]):
+                        addedAlreadyLookAhead = True
+                        stateVectorRampUpDown.append('ACK_802_11_TX_RAMPDOWN')
+                        durationVectorRampUpDown.append(durationDict["ACK_802_11_TX_rampDown"])
+                        timeStampVectorRampUpDown.append(timeStampVectorModified[ii+1])
+                        # Adding next idle time after deduction
+                        stateVectorRampUpDown.append('SLEEP')
+                        durationVectorRampUpDown.append(durationVectorModified[ii+1] - durationDict["ACK_802_11_TX_rampDown"])
+                        timeStampVectorRampUpDown.append(timeStampVectorModified[ii+1]+ durationDict["ACK_802_11_TX_rampDown"])
+                    elif (stateVectorModified[ii+1] == 'SLEEP' and durationVectorModified[ii+1] < durationDict["ACK_802_11_TX_rampDown"]):   # Available IDLE state is less than needed. Just change the available to ACK_802_11_TX_RAMPDOWN. No lookahead
+                        stateVectorModified[ii+1] = 'ACK_802_11_TX_RAMPDOWN'
+                        #print(f"Warning at ii: {ii}. TCP RampDown added with less duration\ndurationVectorModified[ii+1] = {durationVectorModified[ii+1]} \n durationDict["ACK_802_11_TX_rampDown"]={durationDict["ACK_802_11_TX_rampDown"]}")
+                    else:
+                        pass
+                        print(f"Error at ii: {ii}. Could not add TCP RampDown\ndurationVectorModified[ii+1] = {durationVectorModified[ii+1]} \n durationDict['ACK_802_11_TX_rampDown']={durationDict['ACK_802_11_TX_rampDown']}\nstateVectorModified[ii+1]= {stateVectorModified[ii+1]}")
 
                     
             else:
